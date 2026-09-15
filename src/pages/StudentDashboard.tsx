@@ -6,7 +6,7 @@ import { useRealtime } from '../context/RealtimeContext';
 import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import { getMediaUrl } from '../utils/media';
-import { Award, Calendar, Users, Trophy, Sun, Sunrise, Sunset, Moon, Clock, Maximize2, X, BarChart3, Sparkles, Activity, ArrowUpRight, LineChart as LineChartIcon, Layers, ShieldCheck, Flame } from 'lucide-react';
+import { Award, Calendar, Users, Trophy, Sun, Sunrise, Sunset, Moon, Clock, Maximize2, X, BarChart3, Sparkles, Activity, ArrowUpRight, LineChart as LineChartIcon, Layers, ShieldCheck, Flame, BookOpen, Briefcase } from 'lucide-react';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -183,6 +183,8 @@ export const StudentDashboard: React.FC = () => {
       case 'ticket': return <Trophy className="w-6 h-6" />;
       case 'award': return <Award className="w-6 h-6" />;
       case 'users': return <Users className="w-6 h-6" />;
+      case 'briefcase': return <Briefcase className="w-6 h-6" />;
+      case 'book-open': return <BookOpen className="w-6 h-6" />;
       default: return <Calendar className="w-6 h-6" />;
     }
   };
@@ -499,8 +501,15 @@ export const StudentDashboard: React.FC = () => {
       {/* Quick Links */}
       <div className="space-y-4">
         <h3 className="text-xl font-bold text-white">Quick Links</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {data?.quick_links.map((link, idx) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {(data?.quick_links && data.quick_links.length >= 6 ? data.quick_links : [
+            { title: "Explore Events", url: "/events", icon: "calendar" },
+            { title: "Opportunities", url: "/opportunities", icon: "briefcase" },
+            { title: "Study Resources", url: "/resources", icon: "book-open" },
+            { title: "My Registrations", url: "/profile/registrations", icon: "ticket" },
+            { title: "Certificates", url: "/profile/certificates", icon: "award" },
+            { title: "Committees", url: "/committees", icon: "users" },
+          ]).map((link, idx) => (
             <MotionLink
               key={idx}
               to={link.url}
@@ -511,7 +520,7 @@ export const StudentDashboard: React.FC = () => {
               <div className="p-2.5 rounded-xl bg-slate-800 group-hover:bg-sky-500/20 group-hover:text-sky-400 text-slate-400 w-fit transition-colors">
                 {renderIcon(link.icon)}
               </div>
-              <span className="font-semibold text-slate-200 group-hover:text-white">
+              <span className="font-semibold text-slate-200 group-hover:text-white text-sm">
                 {link.title}
               </span>
             </MotionLink>

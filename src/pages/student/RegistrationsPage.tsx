@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useRealtime } from '../../context/RealtimeContext';
 import { CheckCircle2, Ticket, AlertCircle, Calendar, MapPin, Clock } from 'lucide-react';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { getMediaUrl } from '../../utils/media';
 
 interface Event {
   id: string;
@@ -12,6 +13,7 @@ interface Event {
   description: string;
   event_date: string;
   venue: string;
+  banner_image_url?: string | null;
 }
 
 export const RegistrationsPage: React.FC = () => {
@@ -165,7 +167,22 @@ export const RegistrationsPage: React.FC = () => {
               </div>
 
               {selectedEvent && (
-                <div className="p-5 rounded-2xl bg-sky-950/20 border border-sky-900/50 space-y-3 animate-in fade-in">
+                <div className="p-5 rounded-2xl bg-sky-950/20 border border-sky-900/50 space-y-4 animate-in fade-in">
+                  {selectedEvent.banner_image_url && (
+                    <div className="relative rounded-xl overflow-hidden bg-slate-950 border border-slate-800 max-h-64 flex items-center justify-center">
+                      <img
+                        src={getMediaUrl(selectedEvent.banner_image_url)}
+                        alt=""
+                        aria-hidden="true"
+                        className="absolute inset-0 w-full h-full object-cover blur-xl opacity-30 pointer-events-none select-none"
+                      />
+                      <img
+                        src={getMediaUrl(selectedEvent.banner_image_url)}
+                        alt={selectedEvent.title}
+                        className="relative z-10 max-h-64 w-auto max-w-full object-contain"
+                      />
+                    </div>
+                  )}
                   <h4 className="font-bold text-sky-300">{selectedEvent.title}</h4>
                   <div className="grid grid-cols-2 gap-3 text-sm text-slate-300">
                     <div className="flex items-center gap-2"><Calendar className="w-4 h-4 text-sky-500" /> {new Date(selectedEvent.event_date).toLocaleDateString()}</div>

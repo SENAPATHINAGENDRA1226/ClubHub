@@ -46,22 +46,26 @@ html.light {
 
 /* ---- Body ---- */
 html.light body {
-  background-color: #f0f4f8;
-  color: #1e293b;
+  background-color: #faf8ff;
+  color: #0f172a;
 }
 
 /* ---- Base backgrounds ---- */
+html.light .bg-surface {
+  background-color: #faf8ff !important;
+}
+
 html.light .bg-slate-950 {
-  background-color: #f0f4f8 !important;
+  background-color: #faf8ff !important;
 }
 
 html.light .bg-slate-950\/80 {
-  background-color: rgba(240, 244, 248, 0.92) !important;
+  background-color: rgba(250, 248, 255, 0.92) !important;
 }
 
 html.light .bg-slate-900 {
   background-color: #ffffff !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+  box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.04), 0 2px 4px -2px rgba(15, 23, 42, 0.04) !important;
 }
 
 html.light .bg-slate-900\/50 {
@@ -82,31 +86,31 @@ html.light .bg-slate-900\/60 {
 }
 
 html.light .bg-slate-800 {
-  background-color: #f1f5f9 !important;
+  background-color: #f2f3ff !important;
 }
 
 html.light .bg-slate-800\/50 {
-  background-color: rgba(241, 245, 249, 0.7) !important;
+  background-color: rgba(242, 243, 255, 0.7) !important;
 }
 
 html.light .bg-slate-800\/80 {
-  background-color: rgba(241, 245, 249, 0.92) !important;
+  background-color: rgba(242, 243, 255, 0.92) !important;
 }
 
 html.light .bg-slate-800\/40 {
-  background-color: rgba(241, 245, 249, 0.6) !important;
+  background-color: rgba(242, 243, 255, 0.6) !important;
 }
 
 html.light .bg-slate-800\/60 {
-  background-color: rgba(241, 245, 249, 0.8) !important;
+  background-color: rgba(242, 243, 255, 0.8) !important;
 }
 
 html.light .bg-slate-700 {
-  background-color: #e2e8f0 !important;
+  background-color: #eaedff !important;
 }
 
 html.light .bg-slate-700\/50 {
-  background-color: rgba(226, 232, 240, 0.6) !important;
+  background-color: rgba(234, 237, 255, 0.6) !important;
 }
 
 /* ---- Borders ---- */
@@ -428,7 +432,7 @@ html.light ::-webkit-scrollbar-track {
 
 html.light ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
-  border-radius: 9999px;
+  border-radius: 4px;
 }
 
 html.light ::-webkit-scrollbar-thumb:hover {
@@ -498,6 +502,94 @@ button:active:not(:disabled) {
    LIGHT MODE — Selection color
    ============================================================ */
 html.light ::selection {
-  background-color: rgba(56, 189, 248, 0.2);
+  background-color: rgba(30, 64, 175, 0.2);
   color: #0f172a;
+}
+
+/* ============================================================
+   LIGHT THEME DESIGN SYSTEM SPECIFICATION
+   ============================================================ */
+.card-hover {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html.light .card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -6px rgba(30, 64, 175, 0.08), 0 4px 8px -2px rgba(15, 23, 42, 0.03) !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Active sidebar item in light mode */
+html.light .sidebar-item-active {
+  background-color: #eff6ff !important;
+  color: #1e40af !important;
+  font-weight: 600 !important;
+  border-right: 3px solid #1e40af !important;
+  box-shadow: none !important;
+}
+
+html.light .sidebar-item-active svg {
+  color: #1e40af !important;
+}
+
+/* Light mode sidebar navigation */
+html.light aside {
+  background-color: #ffffff !important;
+  border-color: rgba(226, 232, 240, 0.9) !important;
+  box-shadow: 2px 0 12px rgba(15, 23, 42, 0.02) !important;
+}
+
+html.light aside nav a:not(.sidebar-item-active) {
+  color: #475569 !important;
+}
+
+html.light aside nav a:not(.sidebar-item-active):hover {
+  color: #1e40af !important;
+  background-color: #f8fafc !important;
+}
+
+html.light aside nav a:not(.sidebar-item-active) svg {
+  color: #94a3b8 !important;
+}
+
+html.light aside nav a:not(.sidebar-item-active):hover svg {
+  color: #1e40af !important;
+}
+
+/* Header in light mode */
+html.light header {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  border-color: rgba(226, 232, 240, 0.8) !important;
+}
+
+/* Primary color mapping in light theme */
+html.light .bg-primary {
+  background-color: #1e40af !important;
+  color: #ffffff !important;
+}
+
+html.light .bg-sky-600 {
+  background-color: #1e40af !important;
+  color: #ffffff !important;
+}
+
+html.light .hover\:bg-sky-500:hover,
+html.light .hover\:bg-primary:hover {
+  background-color: #1d4ed8 !important;
+}
+
+html.light .text-sky-400,
+html.light .text-sky-500 {
+  color: #1e40af !important;
+}
+
+html.light .border-sky-500,
+html.light .border-sky-500\/30,
+html.light .border-sky-500\/20 {
+  border-color: rgba(30, 64, 175, 0.25) !important;
+}
+
+html.light .bg-sky-500\/10,
+html.light .bg-sky-500\/20 {
+  background-color: rgba(30, 64, 175, 0.08) !important;
 }

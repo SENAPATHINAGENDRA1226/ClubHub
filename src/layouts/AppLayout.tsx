@@ -142,12 +142,12 @@ export const AppLayout: React.FC = () => {
       >
         <div className="flex items-center justify-between p-6 h-20 border-b border-slate-800/50">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl overflow-hidden bg-slate-900/40 border border-slate-800 shadow-lg shrink-0">
+            <div className="flex items-center justify-center w-10 h-10 rounded-eight overflow-hidden bg-primary border border-primary/20 shadow-sm shadow-blue-900/20 text-white shrink-0">
               <img src="/logo.png" alt="DLIDES Student Club Logo" className="w-full h-full object-cover" />
             </div>
             <div>
-              <h1 className="text-xl font-black text-white leading-tight">DLIDES CLUB</h1>
-              <p className="text-[10px] text-sky-400 font-bold tracking-widest uppercase">CSMD</p>
+              <h1 className="text-xl font-display font-bold text-white leading-tight">DLIDES CLUB</h1>
+              <p className="text-[10px] uppercase tracking-widest text-primary font-bold">Campus</p>
             </div>
           </div>
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-400 hover:text-white">
@@ -159,22 +159,22 @@ export const AppLayout: React.FC = () => {
           {/* Student Nav */}
           {role === 'student' && (
             <div className="space-y-1">
-              <p className="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Menu</p>
+              <p className="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Menu</p>
               {studentNavItems.map((item) => (
                 <NavLink
                   key={item.path}
                   to={item.path}
                   end
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 text-sm font-semibold ${
+                    `flex items-center gap-3 px-4 py-2.5 rounded-eight transition-colors text-sm font-medium ${
                       isActive
-                        ? 'bg-sky-600 text-white shadow-lg shadow-sky-600/25'
+                        ? 'sidebar-item-active bg-sky-600 text-white shadow-lg shadow-sky-600/25'
                         : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
                     }`
                   }
                 >
-                  <item.icon className="w-5 h-5" />
-                  {item.name}
+                  <item.icon className="w-5 h-5 shrink-0" />
+                  <span>{item.name}</span>
                 </NavLink>
               ))}
             </div>
@@ -183,22 +183,22 @@ export const AppLayout: React.FC = () => {
           {/* Admin / Committee Nav */}
           {(role === 'admin' || role === 'committee') && (
             <div className="space-y-1">
-              <p className="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Manage</p>
+              <p className="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Menu</p>
               {adminNavItems.filter(item => role && item.allowedRoles.includes(role)).map((item) => (
                 <NavLink
                   key={item.path}
                   to={item.path}
                   end
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 text-sm font-semibold ${
+                    `flex items-center gap-3 px-4 py-2.5 rounded-eight transition-colors text-sm font-medium ${
                       isActive
-                        ? 'bg-sky-600 text-white shadow-lg shadow-sky-600/25'
+                        ? 'sidebar-item-active bg-sky-600 text-white shadow-lg shadow-sky-600/25'
                         : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
                     }`
                   }
                 >
-                  <item.icon className="w-5 h-5" />
-                  {item.name}
+                  <item.icon className="w-5 h-5 shrink-0" />
+                  <span>{item.name}</span>
                 </NavLink>
               ))}
             </div>
@@ -219,7 +219,7 @@ export const AppLayout: React.FC = () => {
               <Menu className="w-6 h-6" />
             </button>
             <div className="hidden lg:block">
-              <span className="px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-300 text-xs font-semibold capitalize">
+              <span className="bg-indigo-50 text-primary text-[11px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider border border-indigo-100 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
                 {role} Role
               </span>
             </div>
@@ -274,10 +274,10 @@ export const AppLayout: React.FC = () => {
             
             <button
               onClick={logout}
-              className="p-2.5 rounded-xl bg-slate-800 hover:bg-rose-950 hover:text-rose-400 text-slate-300 transition-all border border-slate-700 hover:border-rose-800 flex items-center gap-2 text-xs font-semibold"
+              className="flex items-center space-x-2 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-rose-950 dark:hover:text-rose-400 border border-slate-200 dark:border-slate-700 text-slate-700 hover:text-slate-900 dark:text-slate-300 px-3.5 py-2 rounded-eight transition-all shadow-sm"
             >
-              <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">Sign Out</span>
+              <LogOut className="w-4 h-4 text-slate-400" />
+              <span className="hidden sm:inline text-xs font-bold uppercase tracking-wide">Sign Out</span>
             </button>
           </div>
         </header>

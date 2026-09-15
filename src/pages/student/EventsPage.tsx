@@ -5,7 +5,7 @@ import api from '../../services/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import { useRealtime } from '../../context/RealtimeContext';
-import { Calendar, MapPin, Clock, Users, ArrowRight, Bell, X } from 'lucide-react';
+import { Calendar, MapPin, Clock, Users, ArrowRight, Bell, X, Maximize2, Download } from 'lucide-react';
 import { ManageableGrid, ManageableCardOverlay, DeleteConfirmModal } from '../../components/ManageableGrid';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
@@ -63,6 +63,18 @@ export const EventsPage: React.FC = () => {
     title: '', description: '', event_date: '', venue: '', category: 'current', max_participants: '', registration_deadline: ''
   });
   const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const [lightboxPoster, setLightboxPoster] = useState<{ url: string; title: string } | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setLightboxPoster(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const fetchEvents = useCallback(async (tab: string, year?: number | null) => {
     setLoading(true);
@@ -127,6 +139,7 @@ export const EventsPage: React.FC = () => {
     setEditingEvent(null);
     setFormData({ title: '', description: '', event_date: '', venue: '', category: activeTab === 'past' ? 'current' : activeTab, max_participants: '', registration_deadline: '' });
     setBannerFile(null);
+    setBannerPreview(null);
     setIsModalOpen(true);
   };
 
@@ -139,6 +152,7 @@ export const EventsPage: React.FC = () => {
       max_participants: ev.max_participants ? String(ev.max_participants) : ''
     });
     setBannerFile(null);
+    setBannerPreview(ev.banner_image_url ? getMediaUrl(ev.banner_image_url) : null);
     setIsModalOpen(true);
   };
 
@@ -166,7 +180,7 @@ export const EventsPage: React.FC = () => {
 
       if (editingEvent) await api.put(`/events/${editingEvent.id}`, payload);
       else await api.post('/events', payload);
-      
+
       setIsModalOpen(false);
       fetchEvents(activeTab, selectedYear);
     } catch (err) {
@@ -212,9 +226,8 @@ export const EventsPage: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`relative px-6 py-2.5 rounded-xl text-sm font-bold tracking-wide transition-colors ${
-                  activeTab === tab.id ? 'text-white' : 'text-slate-400 hover:text-slate-200'
-                }`}
+                className={`relative px-6 py-2.5 rounded-xl text-sm font-bold tracking-wide transition-colors ${activeTab === tab.id ? 'text-white' : 'text-slate-400 hover:text-slate-200'
+                  }`}
               >
                 {activeTab === tab.id && (
                   <motion.div
@@ -242,11 +255,10 @@ export const EventsPage: React.FC = () => {
                 <button
                   key={year}
                   onClick={() => setSelectedYear(year)}
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-colors whitespace-nowrap ${
-                    selectedYear === year
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-colors whitespace-nowrap ${selectedYear === year
                       ? 'bg-slate-800 text-white border-slate-700'
                       : 'bg-transparent text-slate-500 border-slate-800 hover:border-slate-600 hover:text-slate-300'
-                  }`}
+                    }`}
                 >
                   {year}
                 </button>
@@ -283,91 +295,120 @@ export const EventsPage: React.FC = () => {
             description={`There are no ${activeTab} events to display at the moment.`}
           />
         ) : (
-          <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
             <AnimatePresence mode="popLayout">
-              {events.map((event, index) => (
-                <motion.div
-                  key={event.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  whileHover={{ y: -6, transition: { duration: 0.2 } }}
-                  exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                  transition={{ duration: 0.3 }}
-                  className="group relative flex flex-col bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden hover:border-sky-500/50 hover:shadow-2xl hover:shadow-sky-500/10 transition-all duration-300"
-                >
-                  <div className="h-44 bg-gradient-to-br from-slate-800 to-slate-900 border-b border-slate-800 p-6 flex flex-col justify-end relative overflow-hidden">
-                    <img
-                      src={getEventBannerUrl(event, index)}
-                      alt={event.title}
-                      className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:opacity-90 group-hover:scale-110 transition-all duration-700 ease-out"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/50 to-transparent"></div>
-                    <div className="relative z-10 space-y-1">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-sky-500/20 text-sky-300 border border-sky-500/30 backdrop-blur-md inline-block">
-                        {event.category}
-                      </span>
-                      <h3 className="text-xl font-black text-white leading-tight group-hover:text-sky-400 transition-colors line-clamp-2 pr-12">
-                        {event.title}
-                      </h3>
-                    </div>
-                  </div>
+              {events.map((event, index) => {
+                const posterUrl = getEventBannerUrl(event, index);
+                return (
+                  <motion.div
+                    key={event.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    whileHover={{ y: -6, transition: { duration: 0.2 } }}
+                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                    transition={{ duration: 0.3 }}
+                    className="group relative flex flex-col bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden hover:border-sky-500/50 hover:shadow-2xl hover:shadow-sky-500/10 transition-all duration-300"
+                  >
+                    {/* Poster Showcase Container - Free Size (Zero Cropping) */}
+                    <div
+                      onClick={() => setLightboxPoster({ url: posterUrl, title: event.title })}
+                      className="relative cursor-pointer overflow-hidden bg-slate-950 flex items-center justify-center min-h-[220px] max-h-[520px] border-b border-slate-800/80 group/poster"
+                      title="Click to view full poster"
+                    >
+                      {/* Ambient blurred backdrop for seamless color fill */}
+                      <img
+                        src={posterUrl}
+                        alt=""
+                        aria-hidden="true"
+                        className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 scale-110 pointer-events-none select-none"
+                      />
 
-                  <div className="p-6 flex-1 flex flex-col justify-between">
-                    <div className="space-y-4">
-                      <p className="text-sm text-slate-400 line-clamp-3">
-                        {event.description}
-                      </p>
-                      
-                      <div className="space-y-2.5">
-                        <div className="flex items-center gap-3 text-sm font-medium text-slate-300">
-                          <Calendar className="w-4 h-4 text-sky-500" />
-                          {new Date(event.event_date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' })}
+                      {/* The Full Uncropped Poster */}
+                      <img
+                        src={posterUrl}
+                        alt={event.title}
+                        className="relative z-10 w-full max-h-[520px] object-contain transition-transform duration-500 group-hover/poster:scale-[1.02]"
+                        loading="lazy"
+                      />
+
+                      {/* Quick zoom overlay on hover */}
+                      <div className="absolute inset-0 z-20 bg-slate-950/40 opacity-0 group-hover/poster:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2 backdrop-blur-[2px]">
+                        <span className="px-3.5 py-1.5 rounded-full bg-slate-900/90 text-white border border-slate-700/80 text-xs font-semibold flex items-center gap-1.5 shadow-lg shadow-black/40">
+                          <Maximize2 className="w-3.5 h-3.5 text-sky-400" />
+                          View Full Poster
+                        </span>
+                      </div>
+
+                      {/* Category badge */}
+                      <div className="absolute top-3 left-3 z-20">
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-900/80 text-sky-300 border border-sky-500/30 backdrop-blur-md shadow-md">
+                          {event.category}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-6 flex-1 flex flex-col justify-between">
+                      <div className="space-y-4">
+                        <div>
+                          <h3 className="text-xl font-black text-white leading-tight group-hover:text-sky-400 transition-colors">
+                            {event.title}
+                          </h3>
+                          <p className="text-sm text-slate-400 line-clamp-3 mt-2">
+                            {event.description}
+                          </p>
                         </div>
-                        <div className="flex items-center gap-3 text-sm font-medium text-slate-300">
-                          <Clock className="w-4 h-4 text-sky-500" />
-                          {new Date(event.event_date).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
-                        </div>
-                        <div className="flex items-center gap-3 text-sm font-medium text-slate-300">
-                          <MapPin className="w-4 h-4 text-sky-500" />
-                          {event.venue}
-                        </div>
-                        {event.max_participants && (
+
+                        <div className="space-y-2.5 pt-2 border-t border-slate-800/60">
                           <div className="flex items-center gap-3 text-sm font-medium text-slate-300">
-                            <Users className="w-4 h-4 text-sky-500" />
-                            Capacity: {event.max_participants}
+                            <Calendar className="w-4 h-4 text-sky-500 shrink-0" />
+                            <span>{new Date(event.event_date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' })}</span>
                           </div>
+                          <div className="flex items-center gap-3 text-sm font-medium text-slate-300">
+                            <Clock className="w-4 h-4 text-sky-500 shrink-0" />
+                            <span>{new Date(event.event_date).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</span>
+                          </div>
+                          <div className="flex items-center gap-3 text-sm font-medium text-slate-300">
+                            <MapPin className="w-4 h-4 text-sky-500 shrink-0" />
+                            <span className="line-clamp-1">{event.venue}</span>
+                          </div>
+                          {event.max_participants && (
+                            <div className="flex items-center gap-3 text-sm font-medium text-slate-300">
+                              <Users className="w-4 h-4 text-sky-500 shrink-0" />
+                              <span>Capacity: {event.max_participants}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="mt-8 pt-6 border-t border-slate-800/80">
+                        {activeTab === 'current' ? (
+                          <button
+                            onClick={() => handleRegisterClick(event.id)}
+                            className="w-full py-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2 shadow-lg shadow-sky-600/20"
+                          >
+                            Register Now <ArrowRight className="w-4 h-4" />
+                          </button>
+                        ) : activeTab === 'upcoming' ? (
+                          <button className="w-full py-3 rounded-xl bg-slate-800 text-slate-400 font-bold text-sm flex items-center justify-center gap-2 cursor-not-allowed">
+                            <Bell className="w-4 h-4" /> Registration Not Open
+                          </button>
+                        ) : (
+                          <button className="w-full py-3 rounded-xl bg-slate-950 text-slate-500 font-bold text-sm border border-slate-800 cursor-not-allowed">
+                            Event Completed
+                          </button>
                         )}
                       </div>
                     </div>
 
-                    <div className="mt-8 pt-6 border-t border-slate-800/80">
-                      {activeTab === 'current' ? (
-                        <button
-                          onClick={() => handleRegisterClick(event.id)}
-                          className="w-full py-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2"
-                        >
-                          Register Now <ArrowRight className="w-4 h-4" />
-                        </button>
-                      ) : activeTab === 'upcoming' ? (
-                        <button className="w-full py-3 rounded-xl bg-slate-800 text-slate-400 font-bold text-sm flex items-center justify-center gap-2 cursor-not-allowed">
-                          <Bell className="w-4 h-4" /> Registration Not Open
-                        </button>
-                      ) : (
-                        <button className="w-full py-3 rounded-xl bg-slate-950 text-slate-500 font-bold text-sm border border-slate-800 cursor-not-allowed">
-                          Event Completed
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <ManageableCardOverlay
-                    canManage={canManage}
-                    onEdit={() => openEditModal(event)}
-                    onDelete={() => { setDeletingEvent(event); setIsDeleteModalOpen(true); }}
-                  />
-                </motion.div>
-              ))}
+                    <ManageableCardOverlay
+                      canManage={canManage}
+                      onEdit={() => openEditModal(event)}
+                      onDelete={() => { setDeletingEvent(event); setIsDeleteModalOpen(true); }}
+                    />
+                  </motion.div>
+                );
+              })}
             </AnimatePresence>
           </motion.div>
         )}
@@ -439,13 +480,35 @@ export const EventsPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Banner Image</label>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Banner / Poster (Free Size)</label>
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={e => setBannerFile(e.target.files?.[0] || null)}
+                    onChange={e => {
+                      const file = e.target.files?.[0] || null;
+                      setBannerFile(file);
+                      if (file) {
+                        setBannerPreview(URL.createObjectURL(file));
+                      } else {
+                        setBannerPreview(editingEvent?.banner_image_url ? getMediaUrl(editingEvent.banner_image_url) : null);
+                      }
+                    }}
                     className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-sky-500 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-sky-500/10 file:text-sky-400 hover:file:bg-sky-500/20"
                   />
+                  {bannerPreview && (
+                    <div className="mt-2.5 p-2 rounded-xl bg-slate-950 border border-slate-800 flex flex-col items-center">
+                      <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mb-1.5 self-start">
+                        Poster Preview (Any Size / Aspect Ratio)
+                      </span>
+                      <div className="relative max-h-56 w-full flex items-center justify-center bg-slate-900/50 rounded-lg overflow-hidden p-1">
+                        <img
+                          src={bannerPreview}
+                          alt="Poster preview"
+                          className="max-h-52 w-auto max-w-full object-contain rounded"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -500,6 +563,60 @@ export const EventsPage: React.FC = () => {
         description={`Are you sure you want to delete "${deletingEvent?.title}"?`}
         isDeleting={isSubmitting}
       />
+
+      {/* Fullscreen Poster Lightbox */}
+      <AnimatePresence>
+        {lightboxPoster && (
+          <div
+            className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 bg-slate-950/90 backdrop-blur-md animate-in fade-in duration-200"
+            onClick={() => setLightboxPoster(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-w-4xl max-h-[92vh] w-full flex flex-col bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl"
+            >
+              {/* Top Bar */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/90">
+                <div className="min-w-0 pr-4">
+                  <h3 className="text-base font-bold text-white truncate">{lightboxPoster.title}</h3>
+                  <p className="text-xs text-slate-400">Full Event Poster (Free Size)</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <a
+                    href={lightboxPoster.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    download
+                    className="p-2 text-slate-400 hover:text-sky-400 hover:bg-slate-800 rounded-xl transition-colors"
+                    title="Open original / download"
+                  >
+                    <Download className="w-5 h-5" />
+                  </a>
+                  <button
+                    onClick={() => setLightboxPoster(null)}
+                    className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
+                    title="Close"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Poster Image Content */}
+              <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-slate-950">
+                <img
+                  src={lightboxPoster.url}
+                  alt={lightboxPoster.title}
+                  className="max-h-[75vh] w-auto max-w-full object-contain rounded-xl shadow-lg"
+                />
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </>
   );
 };

@@ -110,22 +110,28 @@ export const ManageableCardOverlay: React.FC<ManageableCardOverlayProps> = ({
 
 interface DeleteConfirmModalProps {
   isOpen: boolean;
-  onClose: () => void;
+  onClose?: () => void;
+  onCancel?: () => void;
   onConfirm: () => void;
   title: string;
-  description: string;
+  description?: string;
+  message?: string;
   isDeleting: boolean;
 }
 
 export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
   isOpen,
   onClose,
+  onCancel,
   onConfirm,
   title,
   description,
+  message,
   isDeleting
 }) => {
   if (!isOpen) return null;
+  const handleClose = onClose || onCancel;
+  const text = description || message;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
@@ -138,11 +144,11 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
           <Trash2 className="w-8 h-8" />
         </div>
         <h2 className="text-2xl font-black text-white text-center mb-2">{title}</h2>
-        <p className="text-slate-400 text-center mb-8">{description}</p>
+        {text && <p className="text-slate-400 text-center mb-8">{text}</p>}
 
         <div className="flex gap-4">
           <button
-            onClick={onClose}
+            onClick={handleClose}
             disabled={isDeleting}
             className="flex-1 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm transition-colors"
           >

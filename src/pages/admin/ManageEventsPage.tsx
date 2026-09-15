@@ -9,7 +9,9 @@ import {
   Loader2,
   Clock,
   Sparkles,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Maximize2,
+  Download
 } from 'lucide-react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -72,6 +74,17 @@ export const ManageEventsPage: React.FC = () => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [lightboxPoster, setLightboxPoster] = useState<{ url: string; title: string } | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setLightboxPoster(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -259,7 +272,7 @@ export const ManageEventsPage: React.FC = () => {
           description={search ? "No events match your search parameters." : "No events have been created yet."}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
           {filteredEvents.map((event) => (
             <motion.div
               key={event.id}
@@ -274,16 +287,50 @@ export const ManageEventsPage: React.FC = () => {
                 onDelete={() => setDeletingId(event.id)}
               />
 
-              {/* Event Image Banner */}
-              <div className="relative h-40 bg-slate-950 overflow-hidden">
+              {/* Event Image Poster / Banner - Free Size (Zero Cropping) */}
+              <div
+                onClick={() => {
+                  if (event.banner_image_url) {
+                    setLightboxPoster({ url: getMediaUrl(event.banner_image_url), title: event.title });
+                  }
+                }}
+                className={`relative bg-slate-950 overflow-hidden flex items-center justify-center border-b border-slate-800 ${
+                  event.banner_image_url ? 'cursor-pointer min-h-[220px] max-h-[480px] group/poster' : 'h-40'
+                }`}
+                title={event.banner_image_url ? "Click to view full poster" : undefined}
+              >
                 {event.banner_image_url ? (
-                  <img src={getMediaUrl(event.banner_image_url)} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <>
+                    {/* Ambient blurred backdrop for seamless edge fill */}
+                    <img
+                      src={getMediaUrl(event.banner_image_url)}
+                      alt=""
+                      aria-hidden="true"
+                      className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 scale-110 pointer-events-none select-none"
+                    />
+
+                    {/* Full Uncropped Poster */}
+                    <img
+                      src={getMediaUrl(event.banner_image_url)}
+                      alt={event.title}
+                      className="relative z-10 w-full max-h-[480px] object-contain transition-transform duration-500 group-hover/poster:scale-[1.02]"
+                      loading="lazy"
+                    />
+
+                    {/* Quick zoom overlay on hover */}
+                    <div className="absolute inset-0 z-20 bg-slate-950/40 opacity-0 group-hover/poster:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2 backdrop-blur-[2px]">
+                      <span className="px-3.5 py-1.5 rounded-full bg-slate-900/90 text-white border border-slate-700/80 text-xs font-semibold flex items-center gap-1.5 shadow-lg shadow-black/40">
+                        <Maximize2 className="w-3.5 h-3.5 text-sky-400" />
+                        View Full Poster
+                      </span>
+                    </div>
+                  </>
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-slate-900 via-slate-950 to-sky-950 flex items-center justify-center">
                     <Sparkles className="w-10 h-10 text-sky-500/30" />
                   </div>
                 )}
-                <div className="absolute top-3 left-3 flex gap-2">
+                <div className="absolute top-3 left-3 z-20 flex gap-2">
                   <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
                     event.category === 'upcoming' ? 'bg-sky-500/80 text-white' :
                     event.category === 'current' ? 'bg-emerald-500/80 text-white animate-pulse' :
@@ -442,13 +489,13 @@ export const ManageEventsPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Banner Image (URL or Upload File)</label>
+                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Banner / Poster Image (Free Size)</label>
                     <div className="flex gap-2 items-center">
                       <input
                         type="text"
                         value={formData.banner_image_url}
                         onChange={(e) => setFormData({ ...formData, banner_image_url: e.target.value })}
-                        placeholder="https://images.unsplash.com/... or upload below"
+                        placeholder="https://... or upload poster below"
                         className="flex-1 px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-sky-500"
                       />
                       <label className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-sky-400 border border-slate-700 rounded-xl font-bold text-xs flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors">
@@ -463,6 +510,28 @@ export const ManageEventsPage: React.FC = () => {
                         />
                       </label>
                     </div>
+
+                    {formData.banner_image_url && (
+                      <div className="relative mt-2.5 p-2 rounded-xl bg-slate-950 border border-slate-800 flex flex-col items-center">
+                        <div className="flex items-center justify-between w-full px-2 py-1 mb-1.5 text-[11px] text-slate-400 font-semibold border-b border-slate-800/60">
+                          <span>Poster Preview (Free Size)</span>
+                          <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, banner_image_url: '' })}
+                            className="text-rose-400 hover:text-rose-300 flex items-center gap-1 transition-colors"
+                          >
+                            <X className="w-3.5 h-3.5" /> Remove
+                          </button>
+                        </div>
+                        <div className="relative max-h-60 w-full flex items-center justify-center bg-slate-900/50 rounded-lg overflow-hidden p-1">
+                          <img
+                            src={getMediaUrl(formData.banner_image_url)}
+                            alt="Poster preview"
+                            className="max-h-56 w-auto max-w-full object-contain rounded"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -520,6 +589,60 @@ export const ManageEventsPage: React.FC = () => {
         description="Are you sure you want to delete this event? This action cannot be undone."
         isDeleting={isDeleting}
       />
+
+      {/* Fullscreen Poster Lightbox */}
+      <AnimatePresence>
+        {lightboxPoster && (
+          <div
+            className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 bg-slate-950/90 backdrop-blur-md animate-in fade-in duration-200"
+            onClick={() => setLightboxPoster(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-w-4xl max-h-[92vh] w-full flex flex-col bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl"
+            >
+              {/* Top Bar */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/90">
+                <div className="min-w-0 pr-4">
+                  <h3 className="text-base font-bold text-white truncate">{lightboxPoster.title}</h3>
+                  <p className="text-xs text-slate-400">Full Event Poster (Free Size)</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <a
+                    href={lightboxPoster.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    download
+                    className="p-2 text-slate-400 hover:text-sky-400 hover:bg-slate-800 rounded-xl transition-colors"
+                    title="Open original / download"
+                  >
+                    <Download className="w-5 h-5" />
+                  </a>
+                  <button
+                    onClick={() => setLightboxPoster(null)}
+                    className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
+                    title="Close"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Poster Image Content */}
+              <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-slate-950">
+                <img
+                  src={lightboxPoster.url}
+                  alt={lightboxPoster.title}
+                  className="max-h-[75vh] w-auto max-w-full object-contain rounded-xl shadow-lg"
+                />
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </ManageableGrid>
   );
 };
