@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import api, { getErrorMessage } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useRealtime } from '../../context/RealtimeContext';
-import { CheckCircle2, Ticket, AlertCircle, Calendar, MapPin, Clock } from 'lucide-react';
+import { CheckCircle2, Ticket, AlertCircle, Calendar, MapPin, Clock, ExternalLink } from 'lucide-react';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { getMediaUrl } from '../../utils/media';
 
@@ -14,6 +14,7 @@ interface Event {
   event_date: string;
   venue: string;
   banner_image_url?: string | null;
+  registration_link?: string | null;
 }
 
 export const RegistrationsPage: React.FC = () => {
@@ -192,21 +193,44 @@ export const RegistrationsPage: React.FC = () => {
                 </div>
               )}
 
-              <div className="space-y-4">
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Your Details (Auto-filled)</label>
-                <div className="grid grid-cols-2 gap-4">
-                  <input type="text" readOnly value={user?.profile?.full_name || ''} className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 cursor-not-allowed" />
-                  <input type="text" readOnly value={user?.profile?.branch || ''} className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 cursor-not-allowed" />
+              {selectedEvent?.registration_link ? (
+                <div className="space-y-4 pt-2">
+                  <div className="p-4 rounded-xl bg-sky-950/40 border border-sky-800/60 text-sky-200 text-sm">
+                    <p className="font-semibold text-white mb-1">External Registration Form</p>
+                    <p className="text-xs text-slate-300">
+                      This event uses an external link for registrations. Click below to open and fill the registration form:
+                    </p>
+                  </div>
+                  <a
+                    href={selectedEvent.registration_link.startsWith('http://') || selectedEvent.registration_link.startsWith('https://')
+                      ? selectedEvent.registration_link
+                      : `https://${selectedEvent.registration_link}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-3.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-sm tracking-wide transition-all shadow-lg shadow-sky-600/20 flex justify-center items-center gap-2"
+                  >
+                    Open Registration Link <ExternalLink className="w-4 h-4" />
+                  </a>
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div className="space-y-4">
+                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Your Details (Auto-filled)</label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <input type="text" readOnly value={user?.profile?.full_name || ''} className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 cursor-not-allowed" />
+                      <input type="text" readOnly value={user?.profile?.branch || ''} className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 cursor-not-allowed" />
+                    </div>
+                  </div>
 
-              <button
-                type="submit"
-                disabled={submitting || !selectedEventId}
-                className="w-full py-3.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-sm tracking-wide transition-all shadow-lg shadow-sky-600/20 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
-              >
-                {submitting ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <><CheckCircle2 className="w-5 h-5" /> Confirm Registration</>}
-              </button>
+                  <button
+                    type="submit"
+                    disabled={submitting || !selectedEventId}
+                    className="w-full py-3.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-sm tracking-wide transition-all shadow-lg shadow-sky-600/20 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+                  >
+                    {submitting ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <><CheckCircle2 className="w-5 h-5" /> Confirm Registration</>}
+                  </button>
+                </>
+              )}
             </form>
           )}
         </div>

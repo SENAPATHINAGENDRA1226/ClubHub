@@ -5,7 +5,7 @@ import api from '../../services/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import { useRealtime } from '../../context/RealtimeContext';
-import { Calendar, MapPin, Clock, Users, ArrowRight, Bell, X, Maximize2, Download } from 'lucide-react';
+import { Calendar, MapPin, Clock, Users, ArrowRight, Bell, X, Maximize2, Download, ExternalLink } from 'lucide-react';
 import { ManageableGrid, ManageableCardOverlay, DeleteConfirmModal } from '../../components/ManageableGrid';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
@@ -21,6 +21,7 @@ interface Event {
   max_participants: number | null;
   registration_deadline: string;
   banner_image_url: string | null;
+  registration_link?: string | null;
 }
 
 const DEFAULT_EVENT_IMAGES = [
@@ -60,7 +61,7 @@ export const EventsPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
-    title: '', description: '', event_date: '', venue: '', category: 'current', max_participants: '', registration_deadline: ''
+    title: '', description: '', event_date: '', venue: '', category: 'current', max_participants: '', registration_deadline: '', registration_link: ''
   });
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
@@ -131,13 +132,23 @@ export const EventsPage: React.FC = () => {
     { id: 'past', label: 'Past' },
   ];
 
-  const handleRegisterClick = (eventId: string) => {
-    navigate(`/profile/registrations?event_id=${eventId}`);
+  const handleRegisterClick = (event: Event) => {
+    if (event.registration_link) {
+      const url = event.registration_link.startsWith('http://') || event.registration_link.startsWith('https://')
+        ? event.registration_link
+        : `https://${event.registration_link}`;
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } else {
+      navigate(`/profile/registrations?event_id=${event.id}`);
+    }
   };
 
   const openAddModal = () => {
     setEditingEvent(null);
-    setFormData({ title: '', description: '', event_date: '', venue: '', category: activeTab === 'past' ? 'current' : activeTab, max_participants: '', registration_deadline: '' });
+    setFormData({
+      title: '', description: '', event_date: '', venue: '', category: activeTab === 'past' ? 'current' : activeTab,
+      max_participants: '', registration_deadline: '', registration_link: ''
+    });
     setBannerFile(null);
     setBannerPreview(null);
     setIsModalOpen(true);
@@ -149,7 +160,8 @@ export const EventsPage: React.FC = () => {
       title: ev.title, description: ev.description, venue: ev.venue, category: ev.category,
       event_date: ev.event_date ? new Date(ev.event_date).toISOString().slice(0, 16) : '',
       registration_deadline: ev.registration_deadline ? new Date(ev.registration_deadline).toISOString().slice(0, 16) : '',
-      max_participants: ev.max_participants ? String(ev.max_participants) : ''
+      max_participants: ev.max_participants ? String(ev.max_participants) : '',
+      registration_link: ev.registration_link || ''
     });
     setBannerFile(null);
     setBannerPreview(ev.banner_image_url ? getMediaUrl(ev.banner_image_url) : null);
@@ -175,7 +187,8 @@ export const EventsPage: React.FC = () => {
         event_date: new Date(formData.event_date).toISOString(),
         registration_deadline: formData.registration_deadline ? new Date(formData.registration_deadline).toISOString() : new Date(formData.event_date).toISOString(),
         max_participants: formData.max_participants ? parseInt(formData.max_participants) : null,
-        banner_image_url
+        banner_image_url,
+        registration_link: formData.registration_link ? formData.registration_link.trim() : null
       };
 
       if (editingEvent) await api.put(`/events/${editingEvent.id}`, payload);
@@ -332,13 +345,15 @@ export const EventsPage: React.FC = () => {
                         loading="lazy"
                       />
 
-                      {/* Quick zoom overlay on hover */}
+                      {/* Quick zoom overlay on hover (for students) */}
+                    {!canManage && (
                       <div className="absolute inset-0 z-20 bg-slate-950/40 opacity-0 group-hover/poster:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2 backdrop-blur-[2px]">
                         <span className="px-3.5 py-1.5 rounded-full bg-slate-900/90 text-white border border-slate-700/80 text-xs font-semibold flex items-center gap-1.5 shadow-lg shadow-black/40">
                           <Maximize2 className="w-3.5 h-3.5 text-sky-400" />
                           View Full Poster
                         </span>
                       </div>
+                    )}
 
                       {/* Category badge */}
                       <div className="absolute top-3 left-3 z-20">
@@ -382,9 +397,16 @@ export const EventsPage: React.FC = () => {
                       </div>
 
                       <div className="mt-8 pt-6 border-t border-slate-800/80">
-                        {activeTab === 'current' ? (
+                        {event.registration_link ? (
                           <button
-                            onClick={() => handleRegisterClick(event.id)}
+                            onClick={() => handleRegisterClick(event)}
+                            className="w-full py-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2 shadow-lg shadow-sky-600/20"
+                          >
+                            Register Now <ExternalLink className="w-4 h-4" />
+                          </button>
+                        ) : activeTab === 'current' ? (
+                          <button
+                            onClick={() => handleRegisterClick(event)}
                             className="w-full py-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2 shadow-lg shadow-sky-600/20"
                           >
                             Register Now <ArrowRight className="w-4 h-4" />
@@ -532,6 +554,18 @@ export const EventsPage: React.FC = () => {
                     className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-sky-500 transition-colors"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Registration Link (Redirect URL)</label>
+                <input
+                  type="url"
+                  value={formData.registration_link}
+                  onChange={e => setFormData({ ...formData, registration_link: e.target.value })}
+                  placeholder="https://forms.gle/... or https://unstop.com/... (optional external registration link)"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-sky-500 transition-colors text-sm font-mono"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">If provided, "Register Now" will redirect students to this URL. Leave blank for built-in registration.</p>
               </div>
 
               <div>

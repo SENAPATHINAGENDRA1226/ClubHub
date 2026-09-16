@@ -11,7 +11,10 @@ import {
   Sparkles,
   Link as LinkIcon,
   Maximize2,
-  Download
+  Download,
+  ExternalLink,
+  Edit2,
+  Trash2
 } from 'lucide-react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -20,7 +23,6 @@ import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
 import {
   ManageableGrid,
-  ManageableCardOverlay,
   DeleteConfirmModal
 } from '../../components/ManageableGrid';
 import { Upload } from 'lucide-react';
@@ -39,6 +41,7 @@ interface Event {
   registration_deadline?: string | null;
   is_active: boolean;
   certificate_url_pattern?: string | null;
+  registration_link?: string | null;
 }
 
 export const ManageEventsPage: React.FC = () => {
@@ -68,6 +71,7 @@ export const ManageEventsPage: React.FC = () => {
     registration_deadline: '',
     certificate_url_pattern: 'https://your-cert-site.com/verify/{registration_number}',
     is_active: true,
+    registration_link: '',
   });
 
   // Delete State
@@ -139,6 +143,7 @@ export const ManageEventsPage: React.FC = () => {
       registration_deadline: new Date().toISOString().slice(0, 16),
       certificate_url_pattern: 'https://your-cert-site.com/verify/{registration_number}',
       is_active: true,
+      registration_link: '',
     });
     setIsModalOpen(true);
   };
@@ -157,6 +162,7 @@ export const ManageEventsPage: React.FC = () => {
       registration_deadline: event.registration_deadline ? new Date(event.registration_deadline).toISOString().slice(0, 16) : '',
       certificate_url_pattern: event.certificate_url_pattern || '',
       is_active: event.is_active,
+      registration_link: event.registration_link || '',
     });
     setIsModalOpen(true);
   };
@@ -176,6 +182,7 @@ export const ManageEventsPage: React.FC = () => {
         registration_deadline: formData.registration_deadline ? new Date(formData.registration_deadline).toISOString() : null,
         banner_image_url: formData.banner_image_url || null,
         certificate_url_pattern: formData.certificate_url_pattern || null,
+        registration_link: formData.registration_link ? formData.registration_link.trim() : null,
       };
 
       if (editingEvent) {
@@ -281,23 +288,37 @@ export const ManageEventsPage: React.FC = () => {
               animate={{ opacity: 1, scale: 1 }}
               className="group relative bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-xl hover:border-slate-700 transition-all flex flex-col justify-between"
             >
-              <ManageableCardOverlay
-                canManage={canManage}
-                onEdit={() => openEditModal(event)}
-                onDelete={() => setDeletingId(event.id)}
-              />
+              {/* Top Action Overlay (Always on top with z-30) */}
+              <div className="absolute top-3 right-3 flex items-center gap-2 z-30">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openEditModal(event);
+                  }}
+                  className="p-2 rounded-xl bg-slate-900/90 hover:bg-sky-600 text-slate-200 hover:text-white border border-slate-700 shadow-xl transition-all"
+                  title="Edit Event"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeletingId(event.id);
+                  }}
+                  className="p-2 rounded-xl bg-slate-900/90 hover:bg-rose-600 text-rose-400 hover:text-white border border-slate-700 shadow-xl transition-all"
+                  title="Delete Event"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
 
               {/* Event Image Poster / Banner - Free Size (Zero Cropping) */}
               <div
-                onClick={() => {
-                  if (event.banner_image_url) {
-                    setLightboxPoster({ url: getMediaUrl(event.banner_image_url), title: event.title });
-                  }
-                }}
                 className={`relative bg-slate-950 overflow-hidden flex items-center justify-center border-b border-slate-800 ${
-                  event.banner_image_url ? 'cursor-pointer min-h-[220px] max-h-[480px] group/poster' : 'h-40'
+                  event.banner_image_url ? 'min-h-[200px] max-h-[460px]' : 'h-40'
                 }`}
-                title={event.banner_image_url ? "Click to view full poster" : undefined}
               >
                 {event.banner_image_url ? (
                   <>
@@ -313,17 +334,9 @@ export const ManageEventsPage: React.FC = () => {
                     <img
                       src={getMediaUrl(event.banner_image_url)}
                       alt={event.title}
-                      className="relative z-10 w-full max-h-[480px] object-contain transition-transform duration-500 group-hover/poster:scale-[1.02]"
+                      className="relative z-10 w-full max-h-[460px] object-contain transition-transform duration-500"
                       loading="lazy"
                     />
-
-                    {/* Quick zoom overlay on hover */}
-                    <div className="absolute inset-0 z-20 bg-slate-950/40 opacity-0 group-hover/poster:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2 backdrop-blur-[2px]">
-                      <span className="px-3.5 py-1.5 rounded-full bg-slate-900/90 text-white border border-slate-700/80 text-xs font-semibold flex items-center gap-1.5 shadow-lg shadow-black/40">
-                        <Maximize2 className="w-3.5 h-3.5 text-sky-400" />
-                        View Full Poster
-                      </span>
-                    </div>
                   </>
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-slate-900 via-slate-950 to-sky-950 flex items-center justify-center">
@@ -375,6 +388,50 @@ export const ManageEventsPage: React.FC = () => {
                       <LinkIcon className="w-4 h-4 shrink-0" />
                       <span className="truncate">{event.certificate_url_pattern}</span>
                     </div>
+                  )}
+                  {event.registration_link && (
+                    <div className="flex items-center gap-2 text-sky-400 truncate">
+                      <ExternalLink className="w-4 h-4 shrink-0" />
+                      <a
+                        href={event.registration_link}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="truncate hover:underline"
+                        title={event.registration_link}
+                      >
+                        {event.registration_link}
+                      </a>
+                    </div>
+                  )}
+                </div>
+
+                {/* Explicit Admin Action Buttons */}
+                <div className="mt-4 pt-4 border-t border-slate-800 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => openEditModal(event)}
+                    className="flex-1 py-2.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-lg shadow-sky-600/20"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" /> Edit Event
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDeletingId(event.id)}
+                    className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-rose-600 hover:text-white text-rose-400 border border-slate-700 font-bold text-xs transition-all flex items-center justify-center gap-1"
+                    title="Delete Event"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                  {event.banner_image_url && (
+                    <button
+                      type="button"
+                      onClick={() => setLightboxPoster({ url: getMediaUrl(event.banner_image_url), title: event.title })}
+                      className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 text-xs font-semibold transition-all flex items-center justify-center"
+                      title="Preview Full Poster"
+                    >
+                      <Maximize2 className="w-3.5 h-3.5" />
+                    </button>
                   )}
                 </div>
               </div>
@@ -533,6 +590,18 @@ export const ManageEventsPage: React.FC = () => {
                       </div>
                     )}
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Registration Link (Redirect URL)</label>
+                  <input
+                    type="url"
+                    value={formData.registration_link}
+                    onChange={(e) => setFormData({ ...formData, registration_link: e.target.value })}
+                    placeholder="https://forms.gle/... or https://unstop.com/... (optional external registration link)"
+                    className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-sky-500 font-mono"
+                  />
+                  <p className="text-[11px] text-slate-500 mt-1">If provided, the "Register Now" button will redirect students directly to this URL. Leave empty to use the built-in registration ticket system.</p>
                 </div>
 
                 <div>
