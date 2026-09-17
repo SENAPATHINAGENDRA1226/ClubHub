@@ -9,7 +9,7 @@ import { Calendar, MapPin, Clock, Users, ArrowRight, Bell, X, Maximize2, Downloa
 import { ManageableGrid, ManageableCardOverlay, DeleteConfirmModal } from '../../components/ManageableGrid';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { getMediaUrl } from '../../utils/media';
+import { getMediaUrl, handleImageError, FALLBACK_EVENT_POSTER } from '../../utils/media';
 
 interface Event {
   id: string;
@@ -36,7 +36,7 @@ const getEventBannerUrl = (event: Event, index: number) => {
   if (event.banner_image_url) {
     return getMediaUrl(event.banner_image_url);
   }
-  return DEFAULT_EVENT_IMAGES[index % DEFAULT_EVENT_IMAGES.length];
+  return DEFAULT_EVENT_IMAGES[index % DEFAULT_EVENT_IMAGES.length] || FALLBACK_EVENT_POSTER;
 };
 
 export const EventsPage: React.FC = () => {
@@ -334,6 +334,7 @@ export const EventsPage: React.FC = () => {
                         src={posterUrl}
                         alt=""
                         aria-hidden="true"
+                        onError={handleImageError}
                         className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 scale-110 pointer-events-none select-none"
                       />
 
@@ -341,6 +342,7 @@ export const EventsPage: React.FC = () => {
                       <img
                         src={posterUrl}
                         alt={event.title}
+                        onError={handleImageError}
                         className="relative z-10 w-full max-h-[520px] object-contain transition-transform duration-500 group-hover/poster:scale-[1.02]"
                         loading="lazy"
                       />
@@ -526,6 +528,7 @@ export const EventsPage: React.FC = () => {
                         <img
                           src={bannerPreview}
                           alt="Poster preview"
+                          onError={handleImageError}
                           className="max-h-52 w-auto max-w-full object-contain rounded"
                         />
                       </div>
@@ -644,6 +647,7 @@ export const EventsPage: React.FC = () => {
                 <img
                   src={lightboxPoster.url}
                   alt={lightboxPoster.title}
+                  onError={handleImageError}
                   className="max-h-[75vh] w-auto max-w-full object-contain rounded-xl shadow-lg"
                 />
               </div>

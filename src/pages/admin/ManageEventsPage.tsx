@@ -14,7 +14,9 @@ import {
   Download,
   ExternalLink,
   Edit2,
-  Trash2
+  Trash2,
+  ShieldCheck,
+  CheckCircle2
 } from 'lucide-react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -26,7 +28,7 @@ import {
   DeleteConfirmModal
 } from '../../components/ManageableGrid';
 import { Upload } from 'lucide-react';
-import { getMediaUrl } from '../../utils/media';
+import { getMediaUrl, handleImageError } from '../../utils/media';
 
 interface Event {
   id: string;
@@ -167,6 +169,26 @@ export const ManageEventsPage: React.FC = () => {
     setIsModalOpen(true);
   };
 
+  const [isPersistingBanner, setIsPersistingBanner] = useState(false);
+
+  const handleMakeBannerPermanent = async () => {
+    const raw = formData.banner_image_url?.trim();
+    if (!raw || !raw.startsWith('http')) return;
+    setIsPersistingBanner(true);
+    try {
+      const res = await api.post('/media/persist-url', { url: raw });
+      if (res.data?.file_url) {
+        setFormData(prev => ({ ...prev, banner_image_url: res.data.file_url }));
+        toast.success('Image downloaded & saved permanently to server storage!');
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error('Could not auto-cache image, but link will still be saved');
+    } finally {
+      setIsPersistingBanner(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.event_date || !formData.location) {
@@ -176,11 +198,23 @@ export const ManageEventsPage: React.FC = () => {
 
     setIsSubmitting(true);
     try {
+      let finalBannerUrl = formData.banner_image_url?.trim() || null;
+      if (finalBannerUrl && finalBannerUrl.startsWith('http')) {
+        try {
+          const persistRes = await api.post('/media/persist-url', { url: finalBannerUrl });
+          if (persistRes.data?.file_url) {
+            finalBannerUrl = persistRes.data.file_url;
+          }
+        } catch {
+          // fallback; backend also attempts persistence
+        }
+      }
+
       const payload = {
         ...formData,
         event_date: new Date(formData.event_date).toISOString(),
         registration_deadline: formData.registration_deadline ? new Date(formData.registration_deadline).toISOString() : null,
-        banner_image_url: formData.banner_image_url || null,
+        banner_image_url: finalBannerUrl,
         certificate_url_pattern: formData.certificate_url_pattern || null,
         registration_link: formData.registration_link ? formData.registration_link.trim() : null,
       };
@@ -327,6 +361,7 @@ export const ManageEventsPage: React.FC = () => {
                       src={getMediaUrl(event.banner_image_url)}
                       alt=""
                       aria-hidden="true"
+                      onError={handleImageError}
                       className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 scale-110 pointer-events-none select-none"
                     />
 
@@ -334,6 +369,7 @@ export const ManageEventsPage: React.FC = () => {
                     <img
                       src={getMediaUrl(event.banner_image_url)}
                       alt={event.title}
+                      onError={handleImageError}
                       className="relative z-10 w-full max-h-[460px] object-contain transition-transform duration-500"
                       loading="lazy"
                     />
@@ -546,7 +582,27 @@ export const ManageEventsPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Banner / Poster Image (Free Size)</label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">Banner / Poster Image (Free Size)</label>
+                      {formData.banner_image_url && (
+                        formData.banner_image_url.startsWith('/media/') ? (
+                          <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <ShieldCheck className="w-3 h-3" /> Permanent Storage
+                          </span>
+                        ) : formData.banner_image_url.startsWith('http') ? (
+                          <button
+                            type="button"
+                            onClick={handleMakeBannerPermanent}
+                            disabled={isPersistingBanner}
+                            className="text-[10px] font-semibold text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 transition-colors"
+                            title="Download and store permanently on server so it never expires"
+                          >
+                            {isPersistingBanner ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldCheck className="w-3 h-3" />}
+                            Make Permanent
+                          </button>
+                        ) : null
+                      )}
+                    </div>
                     <div className="flex gap-2 items-center">
                       <input
                         type="text"
@@ -571,7 +627,10 @@ export const ManageEventsPage: React.FC = () => {
                     {formData.banner_image_url && (
                       <div className="relative mt-2.5 p-2 rounded-xl bg-slate-950 border border-slate-800 flex flex-col items-center">
                         <div className="flex items-center justify-between w-full px-2 py-1 mb-1.5 text-[11px] text-slate-400 font-semibold border-b border-slate-800/60">
-                          <span>Poster Preview (Free Size)</span>
+                          <span className="flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                            Poster Preview (Free Size)
+                          </span>
                           <button
                             type="button"
                             onClick={() => setFormData({ ...formData, banner_image_url: '' })}
@@ -584,6 +643,7 @@ export const ManageEventsPage: React.FC = () => {
                           <img
                             src={getMediaUrl(formData.banner_image_url)}
                             alt="Poster preview"
+                            onError={handleImageError}
                             className="max-h-56 w-auto max-w-full object-contain rounded"
                           />
                         </div>
@@ -705,6 +765,7 @@ export const ManageEventsPage: React.FC = () => {
                 <img
                   src={lightboxPoster.url}
                   alt={lightboxPoster.title}
+                  onError={handleImageError}
                   className="max-h-[75vh] w-auto max-w-full object-contain rounded-xl shadow-lg"
                 />
               </div>

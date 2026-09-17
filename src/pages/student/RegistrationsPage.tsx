@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useRealtime } from '../../context/RealtimeContext';
 import { CheckCircle2, Ticket, AlertCircle, Calendar, MapPin, Clock, ExternalLink } from 'lucide-react';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { getMediaUrl } from '../../utils/media';
+import { getMediaUrl, handleImageError } from '../../utils/media';
 
 interface Event {
   id: string;
@@ -175,11 +175,13 @@ export const RegistrationsPage: React.FC = () => {
                         src={getMediaUrl(selectedEvent.banner_image_url)}
                         alt=""
                         aria-hidden="true"
+                        onError={handleImageError}
                         className="absolute inset-0 w-full h-full object-cover blur-xl opacity-30 pointer-events-none select-none"
                       />
                       <img
                         src={getMediaUrl(selectedEvent.banner_image_url)}
                         alt={selectedEvent.title}
+                        onError={handleImageError}
                         className="relative z-10 max-h-64 w-auto max-w-full object-contain"
                       />
                     </div>
